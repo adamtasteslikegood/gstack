@@ -71,6 +71,17 @@ describe('Audit compliance', () => {
     expect(between.toLowerCase()).toContain('untrusted');
   });
 
+  // Round 2 Fix 2: Trust boundary markers + helper + wrapping in all paths
+  test('browse wraps untrusted content with trust boundary markers', () => {
+    const commands = readFileSync(join(ROOT, 'browse/src/commands.ts'), 'utf-8');
+    expect(commands).toContain('PAGE_CONTENT_COMMANDS');
+    expect(commands).toContain('wrapUntrustedContent');
+    const server = readFileSync(join(ROOT, 'browse/src/server.ts'), 'utf-8');
+    expect(server).toContain('wrapUntrustedContent');
+    const meta = readFileSync(join(ROOT, 'browse/src/meta-commands.ts'), 'utf-8');
+    expect(meta).toContain('wrapUntrustedContent');
+  });
+
   // Fix 5: Data flow documentation in review.ts
   test('review.ts has data flow documentation', () => {
     const review = readFileSync(join(ROOT, 'scripts/resolvers/review.ts'), 'utf-8');

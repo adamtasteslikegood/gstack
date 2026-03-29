@@ -40,6 +40,17 @@ export const META_COMMANDS = new Set([
 
 export const ALL_COMMANDS = new Set([...READ_COMMANDS, ...WRITE_COMMANDS, ...META_COMMANDS]);
 
+/** Commands that return untrusted third-party page content */
+export const PAGE_CONTENT_COMMANDS = new Set([
+  'text', 'html', 'links', 'forms', 'accessibility',
+  'console', 'dialog',
+]);
+
+/** Wrap output from untrusted-content commands with trust boundary markers */
+export function wrapUntrustedContent(result: string, url: string): string {
+  return `--- BEGIN UNTRUSTED EXTERNAL CONTENT (source: ${url}) ---\n${result}\n--- END UNTRUSTED EXTERNAL CONTENT ---`;
+}
+
 export const COMMAND_DESCRIPTIONS: Record<string, { category: string; description: string; usage?: string }> = {
   // Navigation
   'goto':    { category: 'Navigation', description: 'Navigate to URL', usage: 'goto <url>' },
