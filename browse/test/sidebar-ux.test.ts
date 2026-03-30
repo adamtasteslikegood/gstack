@@ -759,10 +759,16 @@ describe('cleanup and screenshot buttons', () => {
   const js = fs.readFileSync(path.join(ROOT, '..', 'extension', 'sidepanel.js'), 'utf-8');
   const css = fs.readFileSync(path.join(ROOT, '..', 'extension', 'sidepanel.css'), 'utf-8');
 
-  test('sidepanel.html contains cleanup and screenshot buttons', () => {
+  test('sidepanel.html contains cleanup and screenshot buttons in inspector', () => {
     expect(html).toContain('inspector-cleanup-btn');
     expect(html).toContain('inspector-screenshot-btn');
     expect(html).toContain('inspector-action-btn');
+  });
+
+  test('sidepanel.html contains cleanup and screenshot buttons in chat toolbar', () => {
+    expect(html).toContain('chat-cleanup-btn');
+    expect(html).toContain('chat-screenshot-btn');
+    expect(html).toContain('quick-actions');
   });
 
   test('sidepanel.js cleanup handler POSTs to /command with cleanup', () => {
@@ -775,12 +781,12 @@ describe('cleanup and screenshot buttons', () => {
   });
 
   test('sidepanel.js cleanup resets inspector state after success', () => {
-    // After cleanup, inspector data is stale
-    const cleanupSection = js.slice(
-      js.indexOf('inspector-cleanup-btn'),
-      js.indexOf('// ─── Screenshot'),
+    // runCleanup should call inspectorShowEmpty after cleanup
+    const cleanupFn = js.slice(
+      js.indexOf('async function runCleanup('),
+      js.indexOf('async function runScreenshot('),
     );
-    expect(cleanupSection).toContain('inspectorShowEmpty');
+    expect(cleanupFn).toContain('inspectorShowEmpty');
   });
 
   test('sidepanel.js has notification rendering for type notification', () => {
@@ -791,6 +797,20 @@ describe('cleanup and screenshot buttons', () => {
   test('sidepanel.css contains inspector-action-btn styles', () => {
     expect(css).toContain('.inspector-action-btn');
     expect(css).toContain('.inspector-action-btn.loading');
+  });
+
+  test('sidepanel.css contains quick-action-btn styles for chat toolbar', () => {
+    expect(css).toContain('.quick-action-btn');
+    expect(css).toContain('.quick-action-btn.loading');
+    expect(css).toContain('.quick-actions');
+  });
+
+  test('cleanup and screenshot use shared helper functions', () => {
+    expect(js).toContain('async function runCleanup(');
+    expect(js).toContain('async function runScreenshot(');
+    // Both inspector and chat buttons are wired
+    expect(js).toContain('chatCleanupBtn');
+    expect(js).toContain('chatScreenshotBtn');
   });
 
   test('sidepanel.css contains chat-notification styles', () => {
