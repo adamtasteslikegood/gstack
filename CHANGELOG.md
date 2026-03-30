@@ -13,6 +13,13 @@ The sidebar is now a visual design tool. Pick any element on the page and see th
 - **Page cleanup.** `$B cleanup --all` removes ads, cookie banners, sticky headers, and social widgets for clean screenshots.
 - **Pretty screenshots.** `$B prettyscreenshot --cleanup --scroll-to ".pricing" ~/Desktop/hero.png` combines cleanup, scroll positioning, and screenshot in one command.
 - **Stop button.** A red stop button appears in the sidebar when an agent is working. Click it to cancel the current task.
+- **CSP fallback for inspector.** Sites with strict Content Security Policy (like SF Chronicle) now get a basic picker via the always-loaded content script. You see computed styles, box model, and same-origin CSS rules. Full CDP mode on sites that allow it.
+- **Cleanup button in sidebar.** One click removes ads, cookie banners, sticky headers, and social widgets. Spinner while it works, notification when done.
+- **Screenshot button in sidebar.** One click captures a screenshot. Shows the saved file path in the chat.
+
+### Fixed
+
+- **Inspector message allowlist.** The background.js allowlist was missing all inspector message types, silently rejecting them. The inspector was broken for all pages, not just CSP-restricted ones. (Found by Codex review.)
 
 ### Changed
 
