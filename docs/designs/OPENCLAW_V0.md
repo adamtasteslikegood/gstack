@@ -186,7 +186,7 @@ The flow when Wintermute dispatches a coding task:
   "project_dir": "~/git/baku",
   "learnings": ["...relevant memories from Wintermute..."],
   "constraints": ["mobile client needs offline token refresh"],
-  "callback": "~/.openclaw/inbox/dispatch-{id}.md",
+  "callback_url": "https://your-clawvisor.ngrok.app/api/tasks/task_abc123/complete",
   "clawvisor_task_id": "task_abc123",
   "ttl_seconds": 3600
 }
@@ -196,7 +196,8 @@ The flow when Wintermute dispatches a coding task:
 
 **Step 3: gstack-dispatch-daemon spawns session**
 ```bash
-claude --print --permission-mode bypassPermissions \
+claude --print --permission-mode acceptEdits \
+  --output-format stream-json --verbose \
   --project ~/git/baku \
   "Load gstack. Dispatch ID: dispatch-2026-04-03-auth-flow. \
    Read dispatch context from ~/.gstack/dispatch/dispatch-2026-04-03-auth-flow.json"
@@ -397,21 +398,61 @@ Authenticated via `CLAWVISOR_AGENT_TOKEN` (minimally scoped).
 
 ### 8. gstack-dispatch-daemon
 
-A lightweight Bun process running on your Mac:
+A lightweight Bun process running on your Mac.
 
-```
-bin/gstack-dispatch-daemon
+**Process model:**
+- Started via launchd (macOS) or systemd (Linux) for persistence
+- `bin/gstack-dispatch-install` creates the service unit
+- Manual mode: `bin/gstack-dispatch-daemon` in terminal
+- Graceful shutdown: SIGTERM finishes active sessions, rejects new dispatches
 
-Responsibilities:
-  - Watches ~/.gstack/dispatch/ for new task files
-  - Validates dispatch came through Clawvisor (token check)
-  - Spawns `claude --print` with gstack loaded
-  - Captures stdout, tracks elapsed time, detects hangs
-  - Writes structured completion report
-  - Fires callback to Wintermute via Clawvisor
-  - Manages concurrency (configurable, default: 2 parallel sessions)
-  - Kills sessions that exceed TTL
-```
+**File watcher:** Uses `Bun.FileSystemWatcher` (FSEvents on macOS, inotify on
+Linux). Watches `~/.gstack/dispatch/` for new `.json` files.
+
+**Startup validation:** On start, verifies:
+- `~/.gstack/dispatch/` exists (creates if missing)
+- `claude` binary is in PATH
+- Clawvisor URL is reachable (if configured, skip in local-only mode)
+
+**Output parsing:** Claude Code's `--output-format stream-json` produces
+newline-delimited JSON with `type` fields: `assistant`, `tool_use`,
+`tool_result`, `system`. The daemon parses these to track progress, detect
+completion (`stop_reason: "end_turn"`), and extract the final message content
+for the completion report.
+
+**Smart retry (accepted expansion):** When a session fails, classify the error:
+- `rate_limit` (Anthropic 429) → backoff 30s, retry as-is
+- `context_overflow` (token limit) → strip learnings from prompt, retry
+- `tool_failure` (transient) → retry as-is
+- `logic_error` (Claude says "I can't do this") → escalate to Wintermute, no retry
+Maximum 1 retry per dispatch. Second failure always escalates.
+
+**Health:** Writes `~/.gstack/dispatch/.daemon-heartbeat` every 30s with
+`{"ts": "...", "active": N, "queued": N, "pid": N}`. Wintermute checks this
+to distinguish "idle" from "crashed."
+
+**Audit log:** `~/.gstack/dispatch/audit.jsonl` records every dispatch event:
+received, schema_validated, spawned, completed, failed, retried, callback_sent,
+callback_failed. Forensics for when things go wrong.
+
+**Orphan cleanup:** On startup, scans for `claude` processes matching known
+dispatch IDs. Re-attaches if still running, kills if stale (no heartbeat
+update in 5+ minutes).
+
+**Clawvisor fallback:** If `CLAWVISOR_URL` is not configured, the daemon runs
+in local-only mode. Dispatch files are trusted without signature verification.
+Completion reports written to `~/.gstack/dispatch/completed/` instead of
+POSTing to a callback URL. This enables development and testing without
+Clawvisor infrastructure.
+
+**Concurrency:** Default `max_concurrent: 2` (configurable in
+`~/.gstack/config.yaml` via `dispatch.max_concurrent`). When at capacity,
+incoming dispatches are queued FIFO. `list-sessions` returns queue depth
+so Wintermute can make intelligent dispatch decisions.
+
+**Token storage:** `CLAWVISOR_AGENT_TOKEN` stored in macOS Keychain
+(`security find-generic-password`) or a file at `~/.gstack/.clawvisor-token`
+with 0600 permissions. Never in plaintext `config.yaml`.
 
 ### 9. Cross-Runtime Diarization (Activity Index)
 
@@ -526,6 +567,8 @@ breakage when either side evolves.
     "constraints": { "type": "array", "items": { "type": "string" } },
     "callback_url": { "type": "string", "format": "uri" },
     "clawvisor_task_id": { "type": "string" },
+    "target_agent": { "enum": ["claude", "codex", "cursor", "gemini"], "default": "claude" },
+    "source_signature": { "type": "string", "description": "HMAC-SHA256 of task field with local secret" },
     "ttl_seconds": { "type": "integer", "minimum": 60, "maximum": 86400 }
   }
 }
@@ -560,7 +603,7 @@ breakage when either side evolves.
     "project": { "type": "string" },
     "branch": { "type": "string" },
     "timestamp": { "type": "string", "format": "date-time" },
-    "resume_prompt": { "type": "string", "description": "exact prompt to resume session" }
+    "resume_prompt": { "type": "string", "description": "exact prompt to resume session", "maxLength": 4096 }
   }
 }
 ```
@@ -671,11 +714,11 @@ min_gstack_version: "0.16.0.0"
 | Shared routing config                             | 30 min  |
 | Dispatch protocol + file format                   | 30 min  |
 | Dispatch-aware preamble                           | 30 min  |
-| gstack-dispatch-daemon (with symmetric callback)  | 1 hour  |
+| gstack-dispatch-daemon (with symmetric callback)  | 4-8 hours |
 | Clawvisor service adapter + restrictions          | 45 min  |
 | ngrok/Tailscale setup integration                 | 15 min  |
 | gstack-bridge skill for OpenClaw                  | 45 min  |
-| **Total**                                         | **~7h** |
+| **Total**                                         | **~12-18h** |
 
 ## Resolved Decisions (from Wintermute review)
 
