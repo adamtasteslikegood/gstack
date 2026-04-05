@@ -126,6 +126,11 @@ export async function markHiddenElements(page: Page | Frame): Promise<string[]> 
           isHidden = true;
           reason = 'clip hiding';
         }
+        // Check visibility: hidden
+        else if (style.visibility === 'hidden') {
+          isHidden = true;
+          reason = 'visibility hidden';
+        }
 
         if (isHidden) {
           el.setAttribute('data-gstack-hidden', 'true');
@@ -143,7 +148,7 @@ export async function markHiddenElements(page: Page | Frame): Promise<string[]> 
 
         if (labelText) {
           for (const pattern of ariaPatterns) {
-            if (new RegExp(pattern).test(labelText)) {
+            if (new RegExp(pattern, 'i').test(labelText)) {
               el.setAttribute('data-gstack-hidden', 'true');
               found.push(`[${el.tagName.toLowerCase()}] ARIA injection: "${labelText.slice(0, 60)}..."`);
               break;
