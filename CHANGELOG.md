@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.15.9.0] - 2026-04-04 — Team Mode
+## [0.15.13.0] - 2026-04-04 — Team Mode
 
 Teams can now keep every developer on the same gstack version automatically. No more vendoring 342 files into your repo. No more version drift across branches. No more "who upgraded gstack last?" Slack threads. One command, every developer is current.
 
@@ -19,6 +19,80 @@ Hat tip to Jared Friedman for the design.
 
 - **Vendoring is deprecated.** README no longer recommends copying gstack into your repo. Global install + `--team` is the way. `--local` flag still works but prints a deprecation warning.
 - **Uninstall cleans up hooks.** `gstack-uninstall` now removes the SessionStart hook from `~/.claude/settings.json`.
+
+## [0.15.12.0] - 2026-04-06
+
+### Fixed
+- `snapshot -i` now auto-includes cursor-interactive elements (dropdown items, popover options, custom listboxes). Previously you had to remember to pass `-C` separately — now `-i` alone finds everything clickable on the page.
+- Snapshot correctly captures items inside floating containers (React portals, Radix Popover, Floating UI) even when they have ARIA roles. Previously these were silently skipped because the accessibility tree sometimes misses dynamically-rendered portals.
+- Dropdown/menu items with `role="option"` or `role="menuitem"` inside popovers are now captured and tagged with `popover-child` in the reason string, making them easy to identify.
+
+## [0.15.11.0] - 2026-04-05
+
+### Changed
+- `/ship` re-runs now execute every verification step (tests, coverage audit, review, adversarial, TODOS, document-release) regardless of prior runs. Only actions (push, PR creation, VERSION bump) are idempotent. Re-running `/ship` means "run the whole checklist again."
+- `/ship` now runs the full Review Army specialist dispatch (testing, maintainability, security, performance, data-migration, api-contract, design, red-team) during pre-landing review, matching `/review`'s depth.
+
+### Added
+- Cross-review finding dedup in `/ship`: findings the user already skipped in a prior `/review` or `/ship` are automatically suppressed on re-run (unless the relevant code changed).
+- PR body refresh after `/document-release`: the PR body is re-edited to include the docs commit, so it always reflects the truly final state.
+
+### Fixed
+- Review Army diff size heuristic now counts insertions + deletions (was insertions-only, which missed deletion-heavy refactors).
+
+### For contributors
+- Extracted cross-review dedup to shared `{{CROSS_REVIEW_DEDUP}}` resolver (DRY between `/review` and `/ship`).
+- Review Army step numbers adapt per-skill via `ctx.skillName` (ship: 3.55/3.56, review: 4.5/4.6), including prose references.
+- Added 3 regression guard tests for new ship template content.
+
+## [0.15.10.0] - 2026-04-05 — Native OpenClaw Skills + ClawHub Publishing
+
+Four methodology skills you can install directly in your OpenClaw agent via ClawHub, no Claude Code session needed. Your agent runs them conversationally via Telegram.
+
+### Added
+
+- **4 native OpenClaw skills on ClawHub.** Install with `clawhub install gstack-openclaw-office-hours gstack-openclaw-ceo-review gstack-openclaw-investigate gstack-openclaw-retro`. Pure methodology, no gstack infrastructure. Office hours (375 lines), CEO review (193), investigate (136), retro (301).
+- **AGENTS.md dispatch fix.** Three behavioral rules that stop Wintermute from telling you to open Claude Code manually. It now spawns sessions itself. Ready-to-paste section at `openclaw/agents-gstack-section.md`.
+
+### Changed
+
+- OpenClaw `includeSkills` cleared. Native ClawHub skills replace the bloated generated versions (was 10-25K tokens each, now 136-375 lines of pure methodology).
+- docs/OPENCLAW.md updated with dispatch routing rules and ClawHub install references.
+
+## [0.15.9.0] - 2026-04-05 — OpenClaw Integration v2
+
+You can now connect gstack to OpenClaw as a methodology source. OpenClaw spawns Claude Code sessions natively via ACP, and gstack provides the planning discipline and thinking frameworks that make those sessions better.
+
+### Added
+
+- **gstack-lite planning discipline.** A 15-line CLAUDE.md that turns every spawned Claude Code session into a disciplined builder: read first, plan, resolve ambiguity, self-review, report. A/B tested: 2x time, meaningfully better output.
+- **gstack-full pipeline template.** For complete feature builds, chains /autoplan, implement, and /ship into one autonomous flow. Your orchestrator drops a task, gets back a PR.
+- **4 native methodology skills for OpenClaw.** Office hours, CEO review, investigate, and retro, adapted for conversational work that doesn't need a coding environment.
+- **4-tier dispatch routing.** Simple (no gstack), Medium (gstack-lite), Heavy (specific skill), Full (complete pipeline). Documented in docs/OPENCLAW.md with routing guide for OpenClaw's AGENTS.md.
+- **Spawned session detection.** Set OPENCLAW_SESSION env var and gstack auto-skips interactive prompts, focusing on task completion. Works for any orchestrator, not just OpenClaw.
+- **includeSkills host config field.** Union logic with skipSkills (include minus skip). Lets hosts generate only the skills they need instead of everything-minus-a-list.
+- **docs/OPENCLAW.md.** Full architecture doc explaining how gstack integrates with OpenClaw, the prompt-as-bridge model, and what we're NOT building (no daemon, no protocol, no Clawvisor).
+
+### Changed
+
+- OpenClaw host config updated: generates only 4 native skills instead of all 31. Removed staticFiles.SOUL.md (referenced non-existent file).
+- Setup script now prints redirect message for `--host openclaw` instead of attempting full installation.
+
+## [0.15.8.1] - 2026-04-05 — Community PR Triage + Error Polish
+
+Closed 12 redundant community PRs, merged 2 ready PRs (#798, #776), and expanded the friendly OpenAI error to every design command. If your org isn't verified, you now get a clear message with the right URL instead of a raw JSON dump, no matter which design command you run.
+
+### Fixed
+
+- **Friendly OpenAI org error on all design commands.** Previously only `$D generate` showed a user-friendly message when your org wasn't verified. Now `$D evolve`, `$D iterate`, `$D variants`, and `$D check` all show the same clear message with the verification URL.
+
+### Added
+
+- **>128KB regression test for Codex session discovery.** Documents the current buffer limitation so future Codex versions with larger session_meta will surface cleanly instead of silently breaking.
+
+### For contributors
+
+- Closed 12 redundant community PRs (6 Gonzih security fixes shipped in v0.15.7.0, 6 stedfn duplicates). Kept #752 open (symlink gap in design serve). Thank you @Gonzih, @stedfn, @itstimwhite for the contributions.
 
 ## [0.15.8.0] - 2026-04-04 — Smarter Reviews
 

@@ -93,6 +93,8 @@ if [ -d ".claude/skills/gstack" ] && [ ! -L ".claude/skills/gstack" ]; then
   fi
 fi
 echo "VENDORED_GSTACK: $_VENDORED"
+# Detect spawned session (OpenClaw or other orchestrator)
+[ -n "$OPENCLAW_SESSION" ] && echo "SPAWNED_SESSION: true" || true
 ```
 
 If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills AND do not
@@ -250,6 +252,13 @@ touch ~/.gstack/.vendoring-warned-${SLUG:-unknown}
 ```
 
 This only happens once per project. If the marker file exists, skip entirely.
+
+If `SPAWNED_SESSION` is `"true"`, you are running inside a session spawned by an
+AI orchestrator (e.g., OpenClaw). In spawned sessions:
+- Do NOT use AskUserQuestion for interactive prompts. Auto-choose the recommended option.
+- Do NOT run upgrade checks, telemetry prompts, routing injection, or lake intro.
+- Focus on completing the task and reporting results via prose output.
+- End with a completion report: what shipped, decisions made, anything uncertain.
 
 ## Voice
 
@@ -932,7 +941,9 @@ STACK=""
 [ -f go.mod ] && STACK="${STACK}go "
 [ -f Cargo.toml ] && STACK="${STACK}rust "
 echo "STACK: ${STACK:-unknown}"
-DIFF_LINES=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+DIFF_INS=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+DIFF_DEL=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
+DIFF_LINES=$((DIFF_INS + DIFF_DEL))
 echo "DIFF_LINES: $DIFF_LINES"
 # Detect test framework for specialist test stub generation
 TEST_FW=""

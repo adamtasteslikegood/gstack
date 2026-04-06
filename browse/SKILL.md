@@ -90,6 +90,8 @@ if [ -d ".claude/skills/gstack" ] && [ ! -L ".claude/skills/gstack" ]; then
   fi
 fi
 echo "VENDORED_GSTACK: $_VENDORED"
+# Detect spawned session (OpenClaw or other orchestrator)
+[ -n "$OPENCLAW_SESSION" ] && echo "SPAWNED_SESSION: true" || true
 ```
 
 If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills AND do not
@@ -247,6 +249,13 @@ touch ~/.gstack/.vendoring-warned-${SLUG:-unknown}
 ```
 
 This only happens once per project. If the marker file exists, skip entirely.
+
+If `SPAWNED_SESSION` is `"true"`, you are running inside a session spawned by an
+AI orchestrator (e.g., OpenClaw). In spawned sessions:
+- Do NOT use AskUserQuestion for interactive prompts. Auto-choose the recommended option.
+- Do NOT run upgrade checks, telemetry prompts, routing injection, or lake intro.
+- Focus on completing the task and reporting results via prose output.
+- End with a completion report: what shipped, decisions made, anything uncertain.
 
 ## Voice
 
@@ -567,14 +576,14 @@ After `resume`, you get a fresh snapshot of wherever the user left off.
 The snapshot is your primary tool for understanding and interacting with pages.
 
 ```
--i        --interactive           Interactive elements only (buttons, links, inputs) with @e refs
+-i        --interactive           Interactive elements only (buttons, links, inputs) with @e refs. Also auto-enables cursor-interactive scan (-C) to capture dropdowns and popovers.
 -c        --compact               Compact (no empty structural nodes)
 -d <N>    --depth                 Limit tree depth (0 = root only, default: unlimited)
 -s <sel>  --selector              Scope to CSS selector
 -D        --diff                  Unified diff against previous snapshot (first call stores baseline)
 -a        --annotate              Annotated screenshot with red overlay boxes and ref labels
 -o <path> --output                Output path for annotated screenshot (default: <temp>/browse-annotated.png)
--C        --cursor-interactive    Cursor-interactive elements (@c refs — divs with pointer, onclick)
+-C        --cursor-interactive    Cursor-interactive elements (@c refs — divs with pointer, onclick). Auto-enabled when -i is used.
 ```
 
 All flags can be combined freely. `-o` only applies when `-a` is also used.
