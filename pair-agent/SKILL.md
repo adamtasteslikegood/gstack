@@ -592,19 +592,17 @@ Use AskUserQuestion:
 
 Options:
 - A) OpenClaw (local or remote)
-- B) Hermes (local or remote)
-- C) Codex / OpenAI Agents (local)
-- D) Cursor (local)
-- E) Another Claude Code session (local or remote)
-- F) Something else (generic HTTP instructions)
+- B) Codex / OpenAI Agents (local)
+- C) Cursor (local)
+- D) Another Claude Code session (local or remote)
+- E) Something else (generic HTTP instructions — use this for Hermes)
 
 Based on the answer, set `TARGET_HOST`:
 - A → `openclaw`
-- B → `hermes` (if not in hosts registry, use generic)
-- C → `codex`
-- D → `cursor`
-- E → `claude`
-- F → generic (no host-specific config)
+- B → `codex`
+- C → `cursor`
+- D → `claude`
+- E → generic (no host-specific config)
 
 ## Step 3: Local or remote?
 
@@ -758,10 +756,6 @@ OpenClaw agents use the `exec` tool instead of `Bash`. The instruction block use
 `exec curl` syntax which OpenClaw understands natively. When using `--local openclaw`,
 credentials are written to `~/.openclaw/skills/gstack/browse-remote.json`.
 
-### Hermes
-
-Hermes agents work the same way as OpenClaw. Use the generic instruction block
-(option F) which provides standard curl commands that any agent can execute.
 
 ### Codex
 
