@@ -1455,9 +1455,12 @@ async function start() {
         }
         try {
           const pairBody = await req.json() as any;
-          const scopes = pairBody.admin
-            ? ['read', 'write', 'admin', 'meta'] as const
-            : (pairBody.scopes || ['read', 'write']) as const;
+          // Default: full access (read+write+admin+meta). The trust boundary is
+          // the pairing ceremony itself, not the scope. --control adds browser-wide
+          // destructive commands (stop, restart, disconnect). --restrict limits scope.
+          const scopes = pairBody.control || pairBody.admin
+            ? ['read', 'write', 'admin', 'meta', 'control'] as const
+            : (pairBody.scopes || ['read', 'write', 'admin', 'meta']) as const;
           const setupKey = createSetupKey({
             clientId: pairBody.clientId,
             scopes: [...scopes],
