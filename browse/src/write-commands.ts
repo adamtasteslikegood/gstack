@@ -7,6 +7,7 @@
 
 import type { BrowserManager } from './browser-manager';
 import { findInstalledBrowsers, importCookies, listSupportedBrowserNames } from './cookie-import-browser';
+import { generatePickerCode } from './cookie-picker-routes';
 import { validateNavigationUrl } from './url-validation';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -530,14 +531,15 @@ export async function handleWriteCommand(
         throw new Error(`No Chromium browsers found. Supported: ${listSupportedBrowserNames().join(', ')}`);
       }
 
-      const pickerUrl = `http://127.0.0.1:${port}/cookie-picker`;
+      const code = generatePickerCode();
+      const pickerUrl = `http://127.0.0.1:${port}/cookie-picker?code=${code}`;
       try {
         Bun.spawn(['open', pickerUrl], { stdout: 'ignore', stderr: 'ignore' });
       } catch {
         // open may fail silently — URL is in the message below
       }
 
-      return `Cookie picker opened at ${pickerUrl}\nDetected browsers: ${browsers.map(b => b.name).join(', ')}\nSelect domains to import, then close the picker when done.`;
+      return `Cookie picker opened at http://127.0.0.1:${port}/cookie-picker\nDetected browsers: ${browsers.map(b => b.name).join(', ')}\nSelect domains to import, then close the picker when done.`;
     }
 
     case 'style': {
