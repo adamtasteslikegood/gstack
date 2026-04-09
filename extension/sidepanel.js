@@ -451,8 +451,7 @@ async function pollChat() {
     // Show/hide stop button based on agent status
     updateStopButton(data.agentStatus === 'processing');
   } catch (err) {
-    if (!err?.message?.includes('Failed to fetch') && !err?.message?.includes('The operation was aborted')) throw err;
-    console.debug('[gstack sidebar] Chat poll skipped (server unreachable)');
+    console.error('[gstack sidebar] Chat poll error:', err.message);
   } finally {
     pollInProgress = false;
   }
@@ -530,8 +529,7 @@ async function stopAgent() {
     const resp = await fetch(`${serverUrl}/sidebar-agent/stop`, { method: 'POST', headers: authHeaders() });
     if (!resp.ok) console.warn(`[gstack sidebar] Stop agent failed: ${resp.status}`);
   } catch (err) {
-    if (!err?.message?.includes('Failed to fetch')) throw err;
-    console.debug('[gstack sidebar] Stop agent skipped (server unreachable)');
+    console.error('[gstack sidebar] Stop agent error:', err.message);
   }
   // Immediately clean up UI
   const thinking = document.getElementById('agent-thinking');
@@ -600,8 +598,7 @@ async function pollTabs() {
 
     renderTabBar(data.tabs);
   } catch (err) {
-    if (!err?.message?.includes('Failed to fetch') && !err?.message?.includes('The operation was aborted')) throw err;
-    console.debug('[gstack sidebar] Tab poll skipped (server unreachable)');
+    console.error('[gstack sidebar] Tab poll error:', err.message);
   }
 }
 
@@ -649,8 +646,7 @@ async function switchBrowserTab(tabId) {
     switchChatTab(tabId);
     pollTabs();
   } catch (err) {
-    if (!err?.message?.includes('Failed to fetch')) throw err;
-    console.debug('[gstack sidebar] Tab switch skipped (server unreachable)');
+    console.error('[gstack sidebar] Failed to switch browser tab:', err.message);
   }
 }
 
@@ -662,8 +658,7 @@ document.getElementById('clear-chat').addEventListener('click', async () => {
     const resp = await fetch(`${serverUrl}/sidebar-chat/clear`, { method: 'POST', headers: authHeaders() });
     if (!resp.ok) console.warn(`[gstack sidebar] Clear chat failed: ${resp.status}`);
   } catch (err) {
-    if (!err?.message?.includes('Failed to fetch')) throw err;
-    console.debug('[gstack sidebar] Clear chat skipped (server unreachable)');
+    console.error('[gstack sidebar] Clear chat error:', err.message);
   }
   // Reset local state
   chatLineCount = 0;
@@ -695,8 +690,7 @@ document.getElementById('chat-cookies-btn').addEventListener('click', async () =
       body: JSON.stringify({ command: 'goto', args: [`${serverUrl}/cookie-picker`] }),
     });
   } catch (err) {
-    if (!err?.message?.includes('Failed to fetch')) throw err;
-    console.debug('[gstack sidebar] Cookie picker skipped (server unreachable)');
+    console.error('[gstack sidebar] Failed to open cookie picker:', err.message);
   }
 });
 

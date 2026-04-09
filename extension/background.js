@@ -46,8 +46,7 @@ async function loadAuthToken() {
       if (data.token) authToken = data.token;
     }
   } catch (err) {
-    if (!err?.message?.includes('Failed to fetch')) throw err;
-    console.debug('[gstack bg] Auth token not available (server may not be running):', err.message);
+    console.error('[gstack bg] Failed to load auth token:', err.message);
   }
 }
 
@@ -126,8 +125,7 @@ async function notifyContentScripts(type) {
       }
     }
   } catch (err) {
-    if (!err?.message?.includes('Extension context invalidated')) throw err;
-    console.debug('[gstack bg] Tab notification skipped (extension context invalidated)');
+    console.error('[gstack bg] Failed to query tabs for notification:', err.message);
   }
 }
 
@@ -182,8 +180,7 @@ async function fetchAndRelayRefs() {
       }
     }
   } catch (err) {
-    if (!err?.message?.includes('Failed to fetch')) throw err;
-    console.debug('[gstack bg] Refs fetch skipped (server unreachable)');
+    console.error('[gstack bg] Failed to fetch/relay refs:', err.message);
   }
 }
 
@@ -206,15 +203,13 @@ async function injectInspector(tabId) {
         files: ['inspector.css'],
       });
     } catch (err) {
-      if (!err?.message?.includes('Extension context invalidated') && !err?.message?.includes('Cannot access')) throw err;
       console.debug('[gstack bg] Inspector CSS injection failed (non-fatal):', err.message);
     }
     // Send startPicker to the injected inspector.js
     try {
       await chrome.tabs.sendMessage(tabId, { type: 'startPicker' });
     } catch (err) {
-      if (!err?.message?.includes('Extension context invalidated') && !err?.message?.includes('Receiving end does not exist')) throw err;
-      console.debug('[gstack bg] startPicker skipped (tab not ready):', err.message);
+      console.warn('[gstack bg] Failed to send startPicker:', err.message);
     }
     inspectorMode = 'full';
     return { ok: true, mode: 'full' };
@@ -237,8 +232,7 @@ async function stopInspector(tabId) {
   try {
     await chrome.tabs.sendMessage(tabId, { type: 'stopPicker' });
   } catch (err) {
-    if (!err?.message?.includes('Extension context invalidated') && !err?.message?.includes('Receiving end does not exist')) throw err;
-    console.debug('[gstack bg] stopPicker skipped (tab not ready):', err.message);
+    console.debug('[gstack bg] Failed to stop picker on tab', tabId, ':', err.message);
   }
   return { ok: true };
 }
@@ -276,8 +270,7 @@ async function sendToContentScript(tabId, message) {
   try {
     const response = await chrome.tabs.sendMessage(tabId, message);
     return response || { ok: true };
-  } catch (e) {
-    if (!e?.message?.includes('Extension context invalidated') && !e?.message?.includes('Receiving end does not exist')) throw e;
+  } catch {
     return { error: 'Content script not available' };
   }
 }
