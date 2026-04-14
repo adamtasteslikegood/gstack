@@ -50,6 +50,7 @@ export const PAGE_CONTENT_COMMANDS = new Set([
   'text', 'html', 'links', 'forms', 'accessibility', 'attrs',
   'console', 'dialog',
   'media', 'data',
+  'ux-audit',
 ]);
 
 /** Wrap output from untrusted-content commands with trust boundary markers */

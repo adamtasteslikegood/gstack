@@ -482,9 +482,13 @@ export async function handleSnapshot(
 
     let colorAssignments: Record<string, string>;
     try {
-      colorAssignments = JSON.parse(opts.heatmap);
+      const parsed = JSON.parse(opts.heatmap);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('not an object');
+      }
+      colorAssignments = parsed;
     } catch {
-      throw new Error('Invalid heatmap JSON. Expected: \'{"@e1":"green","@e3":"red"}\'');
+      throw new Error('Invalid heatmap JSON. Expected object: \'{"@e1":"green","@e3":"red"}\'');
     }
 
     // Validate colors

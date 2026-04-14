@@ -656,13 +656,12 @@ export async function handleMetaCommand(
     // ─── UX Audit ─────────────────────────────────────
     case 'ux-audit': {
       const page = bm.getPage();
-      const url = page.url();
 
       // Extract page structure for UX behavioral analysis
       // Agent interprets the data and applies Krug's 6 usability tests
+      // Uses textContent (not innerText) to avoid layout computation on large DOMs
       const data = await page.evaluate(() => {
         const HEADING_CAP = 50;
-        const LINK_CAP = 100;
         const INTERACTIVE_CAP = 200;
         const TEXT_BLOCK_CAP = 50;
 
@@ -695,7 +694,8 @@ export async function handleMetaCommand(
         });
 
         // "You are here" indicator: current/active nav items
-        const activeNavItems = document.querySelectorAll('[aria-current], .active, .current, [class*="active"], [class*="current"]');
+        // Scoped to nav containers to avoid false positives from animation classes
+        const activeNavItems = document.querySelectorAll('nav [aria-current], nav .active, nav .current, [role="navigation"] [aria-current], [role="navigation"] .active, [role="navigation"] .current');
         const youAreHere = Array.from(activeNavItems).slice(0, 5).map(el => ({
           text: (el.textContent || '').trim().slice(0, 50),
           tag: el.tagName,
@@ -725,7 +725,7 @@ export async function handleMetaCommand(
           const rect = el.getBoundingClientRect();
           return {
             tag: el.tagName,
-            text: (el.textContent || (el as HTMLInputElement).placeholder || (el as HTMLInputElement).value || '').trim().slice(0, 50),
+            text: (el.textContent || (el as HTMLInputElement).placeholder || '').trim().slice(0, 50),
             type: (el as HTMLInputElement).type || null,
             role: el.getAttribute('role'),
             w: Math.round(rect.width),
@@ -740,8 +740,8 @@ export async function handleMetaCommand(
           wordCount: (el.textContent || '').trim().split(/\s+/).filter(Boolean).length,
         }));
 
-        // Total visible text word count
-        const bodyText = (document.body?.innerText || '').trim();
+        // Total visible text word count (textContent avoids layout computation)
+        const bodyText = (document.body?.textContent || '').trim();
         const totalWords = bodyText.split(/\s+/).filter(Boolean).length;
 
         return {
