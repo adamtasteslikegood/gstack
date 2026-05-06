@@ -5,20 +5,22 @@
  * Adding a new host: create hosts/myhost.ts, import here, add to ALL_HOST_CONFIGS.
  */
 
-import type { HostConfig } from '../scripts/host-config';
+import type { HostConfig } from '../scripts/host-config';  
 import claude from './claude';
 import codex from './codex';
 import factory from './factory';
 import kiro from './kiro';
 import opencode from './opencode';
 import slate from './slate';
-import cursor from './cursor';
+import cursor from './cursor'; 
 import openclaw from './openclaw';
 import hermes from './hermes';
 import gbrain from './gbrain';
+import pi from './pi';
 
-/** All registered host configs. Add new hosts here. */
-export const ALL_HOST_CONFIGS: HostConfig[] = [claude, codex, factory, kiro, opencode, slate, cursor, openclaw, hermes, gbrain];
+
+/* All registered host configs. Add new hosts here. */
+export const ALL_HOST_CONFIGS: HostConfig[] = [claude, codex, factory, kiro, opencode, slate, cursor, openclaw, hermes, gbrain, pi];
 
 /** Map from host name to config. */
 export const HOST_CONFIG_MAP: Record<string, HostConfig> = Object.fromEntries(
@@ -65,4 +67,4 @@ export function getExternalHosts(): HostConfig[] {
 }
 
 // Re-export individual configs for direct import
-export { claude, codex, factory, kiro, opencode, slate, cursor, openclaw, hermes, gbrain };
+export { claude, codex, factory, kiro, opencode, slate, cursor, openclaw, hermes, gbrain, pi };
