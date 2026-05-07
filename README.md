@@ -109,37 +109,37 @@ git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/gst
 cd ~/gstack && ./setup
 ```
 
-### Pi                                                                                                                                                              
-                                                                                                                                                                       
-gstack supports Pi natively.                                                                                                                                        
-                                                                                                                                                                      
- Install:                                                                                                                                                            
-                                                                                                                                                                       
-```bash                                                                                                                                                             
-git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/gstack                                                                                 
-cd ~/gstack && ./setup --host pi                                                                                                                                    
-```                                                                                                                                                                   
-                                                                                                                                                                       
- This installs generated gstack skills into Pi's native skill locations:                                                                                               
-                                                                                                                                                                       
- - Global: ~/.pi/agent/skills/                                                                                                                                         
- - Project-local/team mode: .pi/skills/                                                                                                                                
-                                                                                                                                                                       
- Use skills in Pi with /skill:<name>:                                                                                                                                  
-                                                                                                                                                                       
- ```text                                                                                                                                                               
-   /skill:review                                                                                                                                                       
-   /skill:browse                                                                                                                                                       
-   /skill:qa                                                                                                                                                           
-   /skill:autoplan                                                                                                                                                     
-   /skill:cso                                                                                                                                                          
-   /skill:retro                                                                                                                                                        
- ```                                                                                                                                                                   
-                                                                                                                                                                       
- Unlike Claude Code, Pi invokes skills with the /skill: prefix. The Pi host adapter rewrites generated references automatically.                                       
-                                                                                                                                                                       
- If you want teammates to get gstack in a shared repo, commit the project-local .pi/skills/ setup and add repo guidance in AGENTS.md.    
-  
+### Pi
+
+gstack supports Pi natively.
+
+Install:
+
+```bash
+git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/gstack
+cd ~/gstack && ./setup --host pi
+```
+
+This installs gstack into Pi's native skill location:
+
+- Global: `~/.pi/agent/skills/`
+- Generated docs for the Pi host: `.pi/skills/`
+
+Use skills in Pi with the `/skill:` prefix:
+
+```text
+/skill:review
+/skill:browse
+/skill:qa
+/skill:autoplan
+/skill:cso
+/skill:retro
+```
+
+Unlike Claude Code, Pi invokes skills with `/skill:<name>`. The Pi host adapter rewrites generated references automatically.
+
+If you want teammates to use the Pi-flavored generated docs in a shared repo, commit the project-local `.pi/skills/` output and add repo guidance in `AGENTS.md`.
+
 ### Other Agents (cont'd):
 
 Or target a specific agent with `./setup --host <name>`:
