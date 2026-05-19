@@ -116,7 +116,7 @@ gstack supports Pi natively.
  Install:                                                                                                                                                            
                                                                                                                                                                        
 ```bash                                                                                                                                                             
-git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/gstack                                                                                 
+git clone --single-branch --depth 1 https://github.com/adamtasteslikegood/gstack.git ~/gstack                                                                                 
 cd ~/gstack && ./setup --host pi                                                                                                                                    
 ```                                                                                                                                                                   
                                                                                                                                                                        
