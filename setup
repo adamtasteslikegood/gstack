@@ -379,6 +379,7 @@ if [ "$INSTALL_PI" -eq 1 ] && [ "$NEEDS_BUILD" -eq 0 ]; then
 fi
 
 # 2. Ensure Playwright's Chromium is available
+PLAYWRIGHT_LINUX_DEPS_ATTEMPTED=0
 if ! ensure_playwright_browser; then
   echo "Installing Playwright Chromium..."
   (
@@ -404,6 +405,19 @@ if ! ensure_playwright_browser; then
       # tunnels don't fail later with a cryptic module-not-found error.
       node -e "require('@ngrok/ngrok')" 2>/dev/null || npm install --no-save @ngrok/ngrok
     )
+  elif [ "$(uname -s)" = "Linux" ] && [ "${GSTACK_SKIP_PLAYWRIGHT_DEPS:-0}" != "1" ] && ! ensure_playwright_browser; then
+    # Minimal Linux images often have Playwright's browser downloaded but not the
+    # shared libraries Chromium needs at runtime (libnspr4, libnss3, libgbm1,
+    # libatk, etc.). Install the distro packages automatically before failing.
+    echo "Installing Playwright system dependencies (Linux)..."
+    if (
+      cd "$SOURCE_GSTACK_DIR"
+      bunx playwright install-deps chromium
+    ); then
+      PLAYWRIGHT_LINUX_DEPS_ATTEMPTED=1
+    else
+      echo "warning: Playwright system dependency install failed; continuing to launch check" >&2
+    fi
   fi
 fi
 
@@ -414,6 +428,10 @@ if ! ensure_playwright_browser; then
     echo "  Ensure Node.js is installed and 'node -e \"require('playwright')\"' works." >&2
   else
     echo "gstack setup failed: Playwright Chromium could not be launched" >&2
+    if [ "$(uname -s)" = "Linux" ] && [ "$PLAYWRIGHT_LINUX_DEPS_ATTEMPTED" -eq 0 ] && [ "${GSTACK_SKIP_PLAYWRIGHT_DEPS:-0}" != "1" ]; then
+      echo "  Hint: try 'cd $SOURCE_GSTACK_DIR && bunx playwright install-deps chromium'" >&2
+      echo "  Set GSTACK_SKIP_PLAYWRIGHT_DEPS=1 to skip the automatic Linux dependency install." >&2
+    fi
   fi
   exit 1
 fi
