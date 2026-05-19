@@ -770,32 +770,14 @@ SOFTWARE.
 This branch now patches the real `setup` script so `./setup --host pi` works,
 not just `bun run gen:skill-docs --host pi`.
 
-### Full diff
+### What changed
 
-```diff
-diff --git a/setup b/setup
-index 4c1763f9..c3b37bd9 100755
---- a/setup
-+++ b/setup
-@@ -24,6 +24,8 @@ FACTORY_SKILLS="$HOME/.factory/skills"
- FACTORY_GSTACK="$FACTORY_SKILLS/gstack"
- OPENCODE_SKILLS="$HOME/.config/opencode/skills"
- OPENCODE_GSTACK="$OPENCODE_SKILLS/gstack"
-+PI_SKILLS="$HOME/.pi/agent/skills"
-+PI_GSTACK="$PI_SKILLS/gstack"
- 
- IS_WINDOWS=0
- case "$(uname -s)" in
-@@ -43,7 +45,7 @@ TEAM_MODE=0
- NO_TEAM_MODE=0
- while [ $# -gt 0 ]; do
-   case "$1" in
--    --host) [ -z "$2" ] && echo "Missing value for --host (expected claude, codex, kiro, factory, opencode, openclaw, hermes, gbrain, or auto)" >&2 && exit 1; HOST="$2"; shift 2 ;;
-+    --host) [ -z "$2" ] && echo "Missing value for --host (expected claude, codex, kiro, factory, opencode, pi, openclaw, hermes, gbrain, or auto)" >&2 && exit 1; HOST="$2"; shift 2 ;;
-     --host=*) HOST="${1#--host=}"; shift ;;
-     --local) LOCAL_INSTALL=1; shift ;;
-     --prefix)    SKILL_PREFIX=1; SKILL_PREFIX_FLAG=1; shift ;;
-@@ -56,7 +58,7 @@ while [ $# -gt 0 ]; do
+- Added Pi-specific setup paths in the installer.
+- Updated `--host` validation/help text to include `pi`.
+- Extended setup handling so the Pi host is recognized by the real install flow.
+
+For the exact implementation details, see the commit or PR that introduced this
+change rather than duplicating the full patch in this README.
  done
  
  case "$HOST" in
