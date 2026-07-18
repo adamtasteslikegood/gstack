@@ -491,6 +491,16 @@ if [ "$INSTALL_PI" -eq 1 ] && [ "$NEEDS_BUILD" -eq 0 ]; then
   )
 fi
 
+# 1e. Generate .pi/ Pi skill docs
+if [ "$INSTALL_PI" -eq 1 ] && [ "$NEEDS_BUILD" -eq 0 ]; then
+  log "Generating .pi/ skill docs..."
+  (
+    cd "$SOURCE_GSTACK_DIR"
+    bun install --frozen-lockfile 2>/dev/null || bun install
+    bun run gen:skill-docs --host pi
+  )
+fi
+
 # 2. Ensure Playwright's Chromium is available
 PLAYWRIGHT_LINUX_DEPS_ATTEMPTED=0
 if ! ensure_playwright_browser; then
