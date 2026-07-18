@@ -55,6 +55,26 @@ export interface BuildGbrainEnvOptions {
 }
 
 /**
+ * Detect whether a DATABASE_URL targets a PgBouncer transaction-mode pooler.
+ *
+ * Supabase transaction-mode poolers conventionally run on port 6543 at
+ * `*.pooler.supabase.com`. gbrain auto-disables prepared statements on these
+ * (prepared statements break under transaction pooling — #1965); its banner
+ * documents `GBRAIN_PREPARE=true` as the override for poolers that actually
+ * run in session mode on 6543.
+ */
+export function isTransactionModePooler(url: string): boolean {
+  try {
+    // DATABASE_URLs use postgresql:// scheme which URL() doesn't natively
+    // parse host/port from, so swap to http:// for reliable parsing.
+    const parsed = new URL(url.replace(/^postgres(ql)?:\/\//, "http://"));
+    return parsed.port === "6543";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Build an env dict with DATABASE_URL seeded from
  * `${GBRAIN_HOME:-$HOME/.gbrain}/config.json`. Returns the base env
  * unchanged when:
@@ -62,6 +82,12 @@ export interface BuildGbrainEnvOptions {
  *   - the config file is missing or unparseable,
  *   - the config has no `database_url`,
  *   - the caller already set DATABASE_URL to the same value.
+ *
+ * GBRAIN_PREPARE is never set here (#1965): gbrain auto-disables prepared
+ * statements on transaction-mode poolers itself, and forcing them on breaks
+ * every write with "prepared statement does not exist". A caller-set
+ * GBRAIN_PREPARE (either value) passes through untouched — that remains the
+ * documented override for session-mode poolers on port 6543.
  *
  * Always returns a fresh object — mutating the returned env never
  * affects the caller's env. Tests assert on effective values, not
@@ -84,16 +110,31 @@ export function buildGbrainEnv(opts: BuildGbrainEnvOptions = {}): NodeJS.Process
     return out;
   }
   if (!cfg.database_url) return out;
-  if (baseEnv.DATABASE_URL === cfg.database_url) return out;
 
   const hadCaller = baseEnv.DATABASE_URL !== undefined;
-  out.DATABASE_URL = cfg.database_url;
-  if (opts.announce) {
-    const note = hadCaller ? " (overrode value from caller env / .env.local)" : "";
-    process.stderr.write(`[gbrain-exec] seeded DATABASE_URL from ${configPath}${note}\n`);
+  const alreadyMatch = baseEnv.DATABASE_URL === cfg.database_url;
+  if (!alreadyMatch) {
+    out.DATABASE_URL = cfg.database_url;
+    if (opts.announce) {
+      const note = hadCaller ? " (overrode value from caller env / .env.local)" : "";
+      process.stderr.write(`[gbrain-exec] seeded DATABASE_URL from ${configPath}${note}\n`);
+    }
   }
+
   return out;
 }
+
+/**
+ * Windows can't directly spawn the `gbrain` launcher (bun/npm install it as a
+ * `gbrain.cmd`/`.ps1` shim) or a shebang script like the bash `gstack-brain-sync`
+ * — `spawnSync`/`spawn` resolve those only through a shell's PATHEXT + interpreter
+ * lookup. Without `shell: true` the child spawn fails ENOENT, which on the sync
+ * orchestrator surfaced as "brain-sync exited undefined" (#1731). Gate on platform
+ * so POSIX keeps the cheaper no-shell path. Exported so the static-grep tripwire
+ * (test/gbrain-spawn-windows-shell.test.ts) can assert every gbrain/brain-sync
+ * spawn carries it.
+ */
+export const NEEDS_SHELL_ON_WINDOWS = process.platform === "win32";
 
 export interface SpawnGbrainOptions {
   /** Timeout in milliseconds. Defaults to 30s. */
@@ -124,6 +165,7 @@ export function spawnGbrain(args: string[], opts: SpawnGbrainOptions = {}): Spaw
     cwd: opts.cwd,
     stdio: opts.stdio || ["ignore", "pipe", "pipe"],
     env: buildGbrainEnv({ baseEnv: opts.baseEnv, announce: opts.announce }),
+    shell: NEEDS_SHELL_ON_WINDOWS, // #1731: gbrain is a .cmd shim on Windows
   });
 }
 
@@ -156,6 +198,7 @@ export function spawnGbrainAsync(
     stdio: opts.stdio || ["ignore", "pipe", "pipe"],
     cwd: opts.cwd,
     env: buildGbrainEnv({ baseEnv: opts.baseEnv, announce: false }),
+    shell: NEEDS_SHELL_ON_WINDOWS, // #1731: gbrain is a .cmd shim on Windows
   });
 }
 
@@ -170,5 +213,6 @@ export function execGbrainText(args: string[], opts: SpawnGbrainOptions = {}): s
     cwd: opts.cwd,
     stdio: opts.stdio || ["ignore", "pipe", "pipe"],
     env: buildGbrainEnv({ baseEnv: opts.baseEnv, announce: opts.announce }),
+    shell: NEEDS_SHELL_ON_WINDOWS, // #1731: gbrain is a .cmd shim on Windows
   });
 }
