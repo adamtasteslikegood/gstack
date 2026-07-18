@@ -2372,9 +2372,9 @@ describe('setup script validation', () => {
     expect(claudeSection).toContain('link_claude_root_skill_alias "$SOURCE_GSTACK_DIR" "$INSTALL_SKILLS_DIR"');
   });
 
-  test('setup supports --host auto|claude|codex|kiro|opencode', () => {
+  test('setup supports --host auto|claude|codex|kiro|opencode|pi', () => {
     expect(setupContent).toContain('--host');
-    expect(setupContent).toContain('claude|codex|kiro|factory|opencode|auto');
+    expect(setupContent).toContain('claude|codex|kiro|factory|opencode|pi|auto');
   });
 
   test('auto mode detects claude, codex, kiro, and opencode binaries', () => {
@@ -2421,6 +2421,18 @@ describe('setup script validation', () => {
     expect(setupContent).toContain('qa/templates');
     expect(setupContent).toContain('qa/references');
     expect(setupContent).toContain('dx-hall-of-fame.md');
+  });
+
+  test('setup supports --host pi with Pi skill path vars and runtime assets', () => {
+    expect(setupContent).toContain('INSTALL_PI=');
+    expect(setupContent).toContain('PI_SKILLS="$HOME/.pi/agent/skills"');
+    expect(setupContent).toContain('PI_GSTACK="$PI_SKILLS/gstack"');
+    expect(setupContent).toContain('create_pi_runtime_root');
+    expect(setupContent).toContain('bun run gen:skill-docs --host pi');
+    expect(setupContent).toContain('review/specialists');
+    expect(setupContent).toContain('qa/templates');
+    expect(setupContent).toContain('qa/references');
+    expect(setupContent).toContain('office-hours');
   });
 
   test('create_agents_sidecar links runtime assets', () => {
